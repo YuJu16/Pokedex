@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Fredoka:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-family: 'Quicksand', sans-serif;
+        background-image: linear-gradient(135deg, #FFF0F5 0%, #E0F7FA 100%);
+        min-height: 100vh;
+        /* Cute Heart Cursor (Normal) */
+        cursor: url('data:image/svg+xml;utf8,<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 28.5C16 28.5 3 19 3 11.5C3 7 6.5 3.5 11 3.5C13.5 3.5 15.5 5 16 7C16.5 5 18.5 3.5 21 3.5C25.5 3.5 29 7 29 11.5C29 19 16 28.5 16 28.5Z" fill="%23FF91A4" stroke="white" stroke-width="2"/></svg>') 16 16, auto !important;
+    }
+
+    a,
+    button,
+    [role="button"],
+    input,
+    select,
+    textarea,
+    label {
+        /* Cute Heart Pointer (Darker Pink) */
+        cursor: url('data:image/svg+xml;utf8,<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 28.5C16 28.5 3 19 3 11.5C3 7 6.5 3.5 11 3.5C13.5 3.5 15.5 5 16 7C16.5 5 18.5 3.5 21 3.5C25.5 3.5 29 7 29 11.5C29 19 16 28.5 16 28.5Z" fill="%23FF6B8B" stroke="white" stroke-width="2" transform="scale(1.1) translate(-1.5,-1.5)"/></svg>') 16 16, pointer !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: 'Fredoka', sans-serif;
+        letter-spacing: 0.02em;
+    }
+}
+
+/* Cute Components */
+@layer components {
+    .glass-panel {
+        @apply bg-white/70 backdrop-blur-md border border-white/60 shadow-soft rounded-3xl;
+    }
+
+    .glass-card {
+        @apply glass-panel p-6 transition-all duration-300 hover:bg-white/90 hover:scale-[1.02] hover:shadow-xl border-2 border-transparent hover:border-primary/30;
+    }
+
+    .glass-input {
+        @apply bg-white border-2 border-primary/20 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-full px-6 py-3 outline-none transition-all shadow-sm;
+    }
+
+    .glass-button {
+        @apply relative overflow-hidden bg-white text-primary font-bold py-2 px-6 rounded-full border-2 border-primary/20 hover:bg-primary hover:text-white transition-all shadow-md hover:shadow-lg active:scale-95;
+    }
+
+    .glass-button-primary {
+        @apply relative overflow-hidden bg-primary text-white font-bold py-3 px-8 rounded-full border-2 border-primary transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 active:scale-95 active:translate-y-0;
+    }
+}
+
+/* Animations */
+@keyframes float {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(2deg);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Custom Scrollbar - Cute Pink */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #FFF0F5;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #FF91A4;
+    border-radius: 10px;
+    border: 2px solid #FFF0F5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #FF6B8B;
+}
