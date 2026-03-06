@@ -23,7 +23,7 @@ router.post('/:pokemonId', auth, async (req, res) => {
         );
 
         res.json({
-            message: `${pokemon.name.french} ajouté aux favoris`,
+            message: `${pokemon.name} ajouté aux favoris`,
             pokemonId
         });
     } catch (error) {

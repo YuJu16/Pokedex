@@ -20,7 +20,8 @@
     input,
     select,
     textarea,
-    label {
+    label,
+    .cursor-pointer {
         /* Cute Heart Pointer (Darker Pink) */
         cursor: url('data:image/svg+xml;utf8,<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 28.5C16 28.5 3 19 3 11.5C3 7 6.5 3.5 11 3.5C13.5 3.5 15.5 5 16 7C16.5 5 18.5 3.5 21 3.5C25.5 3.5 29 7 29 11.5C29 19 16 28.5 16 28.5Z" fill="%23FF6B8B" stroke="white" stroke-width="2" transform="scale(1.1) translate(-1.5,-1.5)"/></svg>') 16 16, pointer !important;
     }

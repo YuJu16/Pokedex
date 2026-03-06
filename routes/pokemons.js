@@ -10,14 +10,14 @@ router.get('/', async (req, res) => {
         // 1. Construction du filtre
         const filter = {};
 
-        // Filtre par type (ex: ?type=Fire)
+        // Filtre par type (ex: ?type=Feu)
         if (req.query.type) {
-            filter.type = req.query.type;
+            filter['apiTypes.name'] = req.query.type;
         }
 
         // Recherche par nom (ex: ?name=pika)
         if (req.query.name) {
-            filter['name.english'] = {
+            filter.name = {
                 $regex: req.query.name,
                 $options: 'i' // Insensible à la casse
             };
@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
 
         // 2. Pagination
         const page = parseInt(req.query.page) || 1; // Défaut : page 1
-        const limit = parseInt(req.query.limit) || 50; // Défaut : 50 résultats
+        const limit = parseInt(req.query.limit) || 1500; // Défaut : 1500 résultats (tous les Pokémon)
         const skip = (page - 1) * limit;
 
         // 3. Tri (ex: ?sort=name.french ou ?sort=-base.HP)

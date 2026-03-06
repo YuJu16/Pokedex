@@ -1,11 +1,12 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import MusicPlayer from './MusicPlayer';
+import Chatbot from './Chatbot';
 import { motion } from 'framer-motion';
 
 const Layout = () => {
     return (
-        <div className="min-h-screen relative overflow-hidden text-foreground">
+        <div className="min-h-screen relative overflow-hidden text-foreground selection:bg-primary/20 bg-background">
             {/* Cute Background Animations */}
             <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[100px] animate-float" />
@@ -28,6 +29,8 @@ const Layout = () => {
                     <Outlet />
                 </motion.div>
             </main>
+
+            <Chatbot />
 
             <footer className="text-center py-8 text-foreground/60 text-sm font-medium">
                 <p>© 2026 Pokéverse. Created with ❤️ for Pokémon fans.</p>

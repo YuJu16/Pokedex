@@ -5,12 +5,13 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Pokedex from './pages/Pokedex';
 import Team from './pages/Team';
+import PokemonDetails from './pages/PokemonDetails';
+import Settings from './pages/Settings';
+import WhosThatPokemon from './pages/WhosThatPokemon';
+import NotFound from './pages/NotFound';
 
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
-
-// Placeholder pages for now
-const Placeholder = ({ title }) => <div className="p-10 text-white text-3xl font-display">{title} (Coming Soon)</div>
 
 function App() {
   return (
@@ -23,8 +24,11 @@ function App() {
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route path="pokedex" element={<Pokedex />} />
+              <Route path="pokemon/:id" element={<PokemonDetails />} />
               <Route path="team" element={<Team />} />
-              <Route path="*" element={<Placeholder title="404 Not Found" />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="akinator" element={<WhosThatPokemon />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </Router>

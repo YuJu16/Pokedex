@@ -1,11 +1,23 @@
 import mongoose from "mongoose";
 
-// Liste des 18 types Pokémon autorisés
-const POKEMON_TYPES = [
-    'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice',
-    'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug',
-    'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'
-];
+// Schéma flexible pour les types (objets avec name et image)
+const apiTypeSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    image: { type: String }
+}, { _id: false });
+
+// Schéma pour les résistances
+const resistanceSchema = new mongoose.Schema({
+    name: { type: String },
+    damage_multiplier: { type: Number },
+    damage_relation: { type: String }
+}, { _id: false });
+
+// Schéma pour les évolutions
+const evolutionSchema = new mongoose.Schema({
+    name: { type: String },
+    pokedexId: { type: Number }
+}, { _id: false });
 
 const pokemonSchema = new mongoose.Schema({
     id: {
@@ -14,68 +26,48 @@ const pokemonSchema = new mongoose.Schema({
         unique: true,
         min: [1, 'L\'ID doit être un nombre positif (minimum 1)']
     },
+    pokedexId: {
+        type: Number,
+        required: true
+    },
     name: {
-        english: { type: String },
-        japanese: { type: String },
-        chinese: { type: String },
-        french: {
-            type: String,
-            required: [true, 'Le nom français est requis']
-        },
-    },
-    type: {
-        type: [String],
-        required: [true, 'Au moins un type est requis'],
-        validate: {
-            validator: function (types) {
-                // Vérifie que tous les types sont dans la liste autorisée
-                return types.every(type => POKEMON_TYPES.includes(type));
-            },
-            message: props => `Type invalide. Types autorisés : ${POKEMON_TYPES.join(', ')}`
-        }
-    },
-    base: {
-        HP: {
-            type: Number,
-            required: [true, 'Les HP sont requis'],
-            min: [1, 'Les HP doivent être entre 1 et 255'],
-            max: [255, 'Les HP doivent être entre 1 et 255']
-        },
-        Attack: {
-            type: Number,
-            required: [true, 'L\'Attaque est requise'],
-            min: [1, 'L\'Attaque doit être entre 1 et 255'],
-            max: [255, 'L\'Attaque doit être entre 1 et 255']
-        },
-        Defense: {
-            type: Number,
-            required: [true, 'La Défense est requise'],
-            min: [1, 'La Défense doit être entre 1 et 255'],
-            max: [255, 'La Défense doit être entre 1 et 255']
-        },
-        SpecialAttack: {
-            type: Number,
-            required: [true, 'L\'Attaque Spéciale est requise'],
-            min: [1, 'L\'Attaque Spéciale doit être entre 1 et 255'],
-            max: [255, 'L\'Attaque Spéciale doit être entre 1 et 255']
-        },
-        SpecialDefense: {
-            type: Number,
-            required: [true, 'La Défense Spéciale est requise'],
-            min: [1, 'La Défense Spéciale doit être entre 1 et 255'],
-            max: [255, 'La Défense Spéciale doit être entre 1 et 255']
-        },
-        Speed: {
-            type: Number,
-            required: [true, 'La Vitesse est requise'],
-            min: [1, 'La Vitesse doit être entre 1 et 255'],
-            max: [255, 'La Vitesse doit être entre 1 et 255']
-        },
+        type: String,
+        required: [true, 'Le nom du Pokémon est requis']
     },
     image: {
         type: String,
-        required: [true, 'L\'image est requise'],
+        required: [true, 'L\'image est requise']
     },
+    sprite: {
+        type: String
+    },
+    slug: {
+        type: String
+    },
+    stats: {
+        HP: { type: Number, default: 0 },
+        attack: { type: Number, default: 0 },
+        defense: { type: Number, default: 0 },
+        special_attack: { type: Number, default: 0 },
+        special_defense: { type: Number, default: 0 },
+        speed: { type: Number, default: 0 }
+    },
+    apiTypes: [apiTypeSchema],
+    apiGeneration: {
+        type: Number,
+        default: 1
+    },
+    apiResistances: [resistanceSchema],
+    resistanceModifyingAbilitiesForApi: {
+        type: mongoose.Schema.Types.Mixed,
+        default: []
+    },
+    apiEvolutions: [evolutionSchema],
+    apiPreEvolution: {
+        type: mongoose.Schema.Types.Mixed,
+        default: "none"
+    },
+    apiResistancesWithAbilities: [resistanceSchema]
 });
 
 //  pokemon est le nom de la collection dans la base de données MongoDB. il y aura une collection nommée "pokemons"

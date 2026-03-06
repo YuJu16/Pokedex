@@ -3,49 +3,64 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
+const API_URL = 'http://localhost:3000/api/auth';
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
-    // Configure axios defaults
-    if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
-
+    // Configure axios defaults quand le token change
     useEffect(() => {
-        // Here you would typically validate the token with the backend
-        // For now, we'll just assume valid if present, or decode it
         if (token) {
-            // decode token or fetch user profile
-            // For now, just setting a mock user or persisting state
-            setUser({ username: 'Trainer' }); // Replace with actual user data fetch
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        } else {
+            delete axios.defaults.headers.common['Authorization'];
         }
-        setLoading(false);
+    }, [token]);
+
+    // Au chargement, récupérer le profil utilisateur si un token existe
+    useEffect(() => {
+        const fetchUser = async () => {
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+            try {
+                const res = await axios.get(`${API_URL}/me`);
+                setUser(res.data);
+            } catch (error) {
+                // Token invalide ou expiré → on déconnecte
+                console.error('Token invalide, déconnexion...');
+                localStorage.removeItem('token');
+                setToken(null);
+                setUser(null);
+            }
+            setLoading(false);
+        };
+        fetchUser();
     }, [token]);
 
     const login = async (username, password) => {
         try {
-            const res = await axios.post('http://localhost:3000/api/auth/login', { username, password });
-            const { token, message } = res.data;
+            const res = await axios.post(`${API_URL}/login`, { username, password });
+            const { token: newToken, user: userData } = res.data;
 
-            localStorage.setItem('token', token);
-            setToken(token);
-            setUser({ username }); // In a real app, decode token to get user info
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            localStorage.setItem('token', newToken);
+            setToken(newToken);
+            setUser(userData);
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.response?.data?.error || 'Login failed' };
+            return { success: false, error: error.response?.data?.error || 'Échec de la connexion' };
         }
     };
 
-    const register = async (username, password) => {
+    const register = async (username, password, avatar) => {
         try {
-            await axios.post('http://localhost:3000/api/auth/register', { username, password });
-            // Auto login after register? or redirect to login
+            await axios.post(`${API_URL}/register`, { username, password, avatar });
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.response?.data?.error || 'Registration failed' };
+            return { success: false, error: error.response?.data?.error || 'Échec de l\'inscription' };
         }
     };
 

@@ -9,12 +9,12 @@ export const usePokemon = () => {
     useEffect(() => {
         const fetchPokemon = async () => {
             try {
-                // Fetching Generation 1 Pokemon
-                const response = await axios.get('https://tyradex.vercel.app/api/v1/gen/1');
-                setPokemon(response.data);
+                // Récupère les Pokémon depuis le backend local (limite haute pour tout récupérer)
+                const response = await axios.get('http://localhost:3000/api/pokemons?limit=1500');
+                setPokemon(response.data.data);
                 setLoading(false);
             } catch (err) {
-                console.error("Error fetching pokemon:", err);
+                console.error("Erreur lors du chargement des Pokémon:", err);
                 setError(err);
                 setLoading(false);
             }

@@ -4,10 +4,83 @@ import User from '../models/user.js';
 
 const router = express.Router();
 
+// Middleware pour vérifier le token JWT
+const authMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token manquant' });
+    }
+    try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+};
+
+// GET /api/auth/me - Récupérer le profil de l'utilisateur connecté
+router.get('/me', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        }
+        res.json({
+            id: user._id,
+            username: user.username,
+            avatar: user.avatar
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// PUT /api/auth/me - Mettre à jour le profil (avatar et/ou mot de passe)
+router.put('/me', authMiddleware, async (req, res) => {
+    try {
+        const { avatar, currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        }
+
+        // Changement de mot de passe
+        if (newPassword) {
+            if (!currentPassword) {
+                return res.status(400).json({ error: 'Le mot de passe actuel est requis' });
+            }
+            const isValid = await user.comparePassword(currentPassword);
+            if (!isValid) {
+                return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+            }
+            user.password = newPassword;
+        }
+
+        // Changement d'avatar
+        if (avatar) {
+            user.avatar = avatar;
+        }
+
+        await user.save();
+
+        res.json({
+            message: 'Profil mis à jour',
+            user: { id: user._id, username: user.username, avatar: user.avatar }
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Erreur lors de la mise à jour du profil' });
+    }
+});
+
 // POST /api/auth/register - Inscription d'un nouvel utilisateur
 router.post('/register', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password, avatar } = req.body;
 
         // Validation : vérifier que username et password sont fournis
         if (!username || !password) {
@@ -24,22 +97,23 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // Créer l'utilisateur (le pre-save hashera automatiquement le mot de passe)
-        const newUser = await User.create({ username, password });
+        // Créer l'utilisateur avec l'avatar optionnel
+        const userData = { username, password };
+        if (avatar) userData.avatar = avatar;
+
+        const newUser = await User.create(userData);
 
         // Retourner un message de succès (SANS le mot de passe)
         res.status(201).json({
             message: 'Utilisateur créé avec succès',
             user: {
                 id: newUser._id,
-                username: newUser.username
+                username: newUser.username,
+                avatar: newUser.avatar
             }
         });
     } catch (error) {
         console.error('❌ Error during registration:', error);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Full error:', JSON.stringify(error, null, 2));
 
         // Gestion des erreurs de validation Mongoose
         if (error.name === 'ValidationError') {
@@ -81,18 +155,22 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // Générer un JWT (JSON Web Token)
-        // Le token contient l'ID de l'utilisateur et expire après 24h
+        // Générer un JWT avec les infos utilisateur
         const token = jwt.sign(
-            { id: user._id, username: user.username }, // Payload (données encodées dans le token)
-            process.env.JWT_SECRET, // Clé secrète pour signer le token
-            { expiresIn: '24h' } // Durée de validité
+            { id: user._id, username: user.username },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
         );
 
-        // Retourner le token
+        // Retourner le token ET les infos utilisateur
         res.json({
             message: 'Connexion réussie',
-            token
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                avatar: user.avatar
+            }
         });
     } catch (error) {
         console.error('Error during login:', error);

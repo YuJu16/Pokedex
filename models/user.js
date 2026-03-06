@@ -15,6 +15,10 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Le mot de passe est requis'],
         minlength: [6, 'Le mot de passe doit contenir au moins 6 caractères']
     },
+    avatar: {
+        type: String,
+        default: '/img/avatars/default.png'
+    },
     favorites: {
         type: [Number], // Tableau d'IDs de Pokémon
         default: []

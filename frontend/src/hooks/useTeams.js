@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -9,19 +9,24 @@ export const useTeams = () => {
     const { token } = useAuth();
     const { addToast } = useToast();
 
+    // Créer une config axios avec le token d'authentification
+    const authConfig = useMemo(() => ({
+        headers: { Authorization: `Bearer ${token}` }
+    }), [token]);
+
     const fetchTeams = useCallback(async () => {
         if (!token) return;
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:3000/api/teams');
+            const res = await axios.get('http://localhost:3000/api/teams', authConfig);
             setTeams(res.data.teams);
         } catch (error) {
             console.error(error);
-            addToast('Failed to load teams', 'error');
+            addToast('Impossible de charger les équipes', 'error');
         } finally {
             setLoading(false);
         }
-    }, [token, addToast]);
+    }, [token, addToast, authConfig]);
 
     useEffect(() => {
         fetchTeams();
@@ -29,23 +34,23 @@ export const useTeams = () => {
 
     const createTeam = async (name) => {
         try {
-            const res = await axios.post('http://localhost:3000/api/teams', { name, pokemons: [] });
+            const res = await axios.post('http://localhost:3000/api/teams', { name, pokemons: [] }, authConfig);
             setTeams(prev => [res.data, ...prev]);
-            addToast('Team created successfully!', 'success');
+            addToast('Équipe créée avec succès !', 'success');
             return true;
         } catch (error) {
-            addToast(error.response?.data?.error || 'Failed to create team', 'error');
+            addToast(error.response?.data?.error || 'Impossible de créer l\'équipe', 'error');
             return false;
         }
     };
 
     const deleteTeam = async (id) => {
         try {
-            await axios.delete(`http://localhost:3000/api/teams/${id}`);
+            await axios.delete(`http://localhost:3000/api/teams/${id}`, authConfig);
             setTeams(prev => prev.filter(t => t._id !== id));
-            addToast('Team deleted', 'success');
+            addToast('Équipe supprimée', 'success');
         } catch (error) {
-            addToast('Failed to delete team', 'error');
+            addToast('Impossible de supprimer l\'équipe', 'error');
         }
     };
 
@@ -54,11 +59,11 @@ export const useTeams = () => {
         if (!team) return;
 
         if (team.pokemons.length >= 6) {
-            addToast('Team is full (max 6)', 'error');
+            addToast('Équipe complète (max 6)', 'error');
             return;
         }
         if (team.pokemons.includes(pokemonId)) {
-            addToast('Pokemon already in team', 'error');
+            addToast('Pokémon déjà dans l\'équipe', 'error');
             return;
         }
 
@@ -67,13 +72,12 @@ export const useTeams = () => {
             const res = await axios.put(`http://localhost:3000/api/teams/${teamId}`, {
                 name: team.name,
                 pokemons: newPokemons
-            });
-            // Update local state
+            }, authConfig);
             setTeams(prev => prev.map(t => t._id === teamId ? res.data : t));
-            addToast('Pokemon added to team!', 'success');
+            addToast('Pokémon ajouté à l\'équipe !', 'success');
             return true;
         } catch (error) {
-            addToast(error.response?.data?.error || 'Failed to add pokemon', 'error');
+            addToast(error.response?.data?.error || 'Impossible d\'ajouter le Pokémon', 'error');
             return false;
         }
     };
@@ -87,11 +91,11 @@ export const useTeams = () => {
             const res = await axios.put(`http://localhost:3000/api/teams/${teamId}`, {
                 name: team.name,
                 pokemons: newPokemons
-            });
+            }, authConfig);
             setTeams(prev => prev.map(t => t._id === teamId ? res.data : t));
-            addToast('Pokemon removed', 'success');
+            addToast('Pokémon retiré', 'success');
         } catch (error) {
-            addToast('Failed to remove pokemon', 'error');
+            addToast('Impossible de retirer le Pokémon', 'error');
         }
     };
 

@@ -12,7 +12,7 @@ import Pokemon from '../models/pokemon.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const pokemonsData = JSON.parse(
-    readFileSync(join(__dirname, '../data/pokemons.json'), 'utf-8')
+    readFileSync(join(__dirname, '../data/PokemonListenPlus.json'), 'utf-8')
 );
 
 // Fonction principale de seed

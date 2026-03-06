@@ -9,6 +9,8 @@ import authRouter from './routes/auth.js';
 import favoritesRouter from './routes/favorites.js';
 import statsRouter from './routes/stats.js';
 import teamsRouter from './routes/teams.js';
+import chatbotRouter from './routes/chatbot.js';
+import akinatorRouter from './routes/akinator.js';
 import connect from './db/connect.js';
 
 // Connexion à MongoDB AVANT de lancer le serveur
@@ -42,6 +44,12 @@ app.use('/api/stats', statsRouter);
 
 // Routes équipes
 app.use('/api/teams', teamsRouter);
+
+// Routes chatbot IA (Mimiqui)
+app.use('/api/chatbot', chatbotRouter);
+
+// Routes Akinator (Métamorph)
+app.use('/api/akinator', akinatorRouter);
 
 
 app.listen(process.env.PORT || 3000, () => {
