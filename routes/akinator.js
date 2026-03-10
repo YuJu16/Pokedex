@@ -1,14 +1,12 @@
 import express from 'express';
-import axios from 'axios';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = express.Router();
 
-// Configuration LM Studio (API compatible OpenAI)
-const LM_STUDIO_URL = 'http://127.0.0.1:1234/v1/chat/completions';
-const LM_STUDIO_MODEL = 'google/gemma-3-4b:2';
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_DITTO);
 
 const SYSTEM_PROMPT = `Tu es Métamorph (Ditto), le Pokémon #132 qui peut se transformer en n'importe quel autre Pokémon.
-Tu joues au jeu "Qui est ce Pokémon ?" — un jeu style Akinator où tu dois deviner à quel Pokémon l'utilisateur pense.
+Tu joues au jeu "Quel est ce Pokémon ?" — un jeu style Akinator où tu dois deviner à quel Pokémon l'utilisateur pense.
 
 === TON IDENTITÉ ===
 - Tu es Métamorph, le blob rose transformiste !
@@ -100,33 +98,35 @@ router.post('/', async (req, res) => {
         }
 
         // Log le dernier message
-        const lastMessage = messages[messages.length - 1];
-        console.log(`👤 Dernier message (${lastMessage.role}): "${lastMessage.text}"`);
+        const lastMessageObj = messages[messages.length - 1];
+        console.log(`👤 Dernier message (${lastMessageObj.role}): "${lastMessageObj.text}"`);
 
-        // Convertir les messages au format OpenAI
-        const openaiMessages = [
-            { role: 'system', content: SYSTEM_PROMPT },
-            ...messages.map(msg => ({
-                role: msg.role === 'user' ? 'user' : 'assistant',
-                content: msg.text
-            }))
-        ];
+        // Convertir les messages au format Gemini
+        const lastMessage = messages[messages.length - 1].text;
+        const historyMessages = messages.slice(0, -1);
 
-        console.log('🤖 Envoi à LM Studio...');
+        const formattedHistory = historyMessages.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+        }));
 
-        // Appel à LM Studio (API compatible OpenAI)
-        // Note: on n'utilise pas response_format car pas supporté par tous les modèles locaux
-        const response = await axios.post(LM_STUDIO_URL, {
-            model: LM_STUDIO_MODEL,
-            messages: openaiMessages,
-            temperature: 0.7,
-            max_tokens: 500
-        }, {
-            timeout: 120000 // 2 minutes max (les modèles locaux peuvent être lents)
+        console.log('🤖 Envoi à Gemini...');
+
+        // Créer le modèle avec le system prompt comme instruction système
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            systemInstruction: SYSTEM_PROMPT,
+            generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
         });
 
-        const rawReply = response.data.choices[0].message.content;
-        console.log(`📥 Réponse brute LM Studio (${rawReply.length} chars):`, rawReply.substring(0, 500));
+        // Initialiser la session de chat avec uniquement les vrais échanges (pas le system prompt)
+        const chatSession = model.startChat({
+            history: formattedHistory
+        });
+
+        const result = await chatSession.sendMessage(lastMessage);
+        const rawReply = result.response.text();
+        console.log(`📥 Réponse brute Gemini (${rawReply.length} chars):`, rawReply.substring(0, 500));
 
         // Parse the JSON response
         let parsed;
@@ -176,21 +176,17 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('\n❌❌❌ ERREUR AKINATOR ❌❌❌');
         console.error('Message:', error.message);
-
-        if (error.code === 'ECONNREFUSED') {
-            return res.status(503).json({
-                message: "LM Studio n'est pas lancé ! Démarre LM Studio et charge un modèle. 🖥️",
-                options: ["Réessayer 🔄"],
-                guess: null,
-                confidence: 0
-            });
-        }
+        console.error('Stack:', error.stack);
+        console.error('Status:', error.status);
+        console.error('StatusText:', error.statusText);
 
         res.status(500).json({
             message: "Métamorph est fatigué de se transformer... 🫠💤 Réessaie !",
             options: ["Réessayer 🔄"],
             guess: null,
-            confidence: 0
+            confidence: 0,
+            _debug_error: error.message,
+            _debug_status: error.status
         });
     }
 });

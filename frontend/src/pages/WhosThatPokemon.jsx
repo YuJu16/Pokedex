@@ -12,6 +12,9 @@ export default function WhosThatPokemon() {
     const [guessedPokemon, setGuessedPokemon] = useState(null);
     const [guessCorrect, setGuessCorrect] = useState(null);
     const [questionCount, setQuestionCount] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [isShaking, setIsShaking] = useState(false);
+    const [pokemonImageUrl, setPokemonImageUrl] = useState(null);
     const containerRef = useRef(null);
 
     // Start the game on mount
@@ -27,6 +30,9 @@ export default function WhosThatPokemon() {
         setGuessedPokemon(null);
         setGuessCorrect(null);
         setQuestionCount(0);
+        setIsAnimating(false);
+        setIsShaking(false);
+        setPokemonImageUrl(null);
 
         try {
             const response = await axios.post('http://localhost:3000/api/akinator', {
@@ -57,12 +63,23 @@ export default function WhosThatPokemon() {
         // If guess was made and user responds
         if (currentQuestion?.guess) {
             if (option.includes("Oui") || option.includes("🎉")) {
+                setIsAnimating(true);
                 setGuessCorrect(true);
                 setGameOver(true);
                 setGuessedPokemon(currentQuestion.guess);
+                fetchPokemonImage(currentQuestion.guess);
+                
+                // End animation class after 2 seconds
+                setTimeout(() => {
+                    setIsAnimating(false);
+                }, 2000);
                 return;
             }
-            // Wrong guess, continue
+            // Wrong guess logic
+            if (option.includes("Non") || option.includes("😏")) {
+                setIsShaking(true);
+                setTimeout(() => setIsShaking(false), 500);
+            }
         }
 
         // If user clicks "Réessayer" or "Recommencer"
@@ -100,6 +117,41 @@ export default function WhosThatPokemon() {
         }
     };
 
+    const fetchPokemonImage = async (pokemonName) => {
+        try {
+            const res = await axios.get(`http://localhost:3000/api/pokemons?name=${pokemonName}`);
+            // L'API locale retourne souvent la liste dans res.data.data
+            const pokemonsList = res.data.data || res.data;
+            if (Array.isArray(pokemonsList) && pokemonsList.length > 0 && pokemonsList[0].image) {
+                setPokemonImageUrl(pokemonsList[0].image);
+            } else if (res.data && res.data.image) {
+                setPokemonImageUrl(res.data.image);
+            } else {
+                throw new Error("Pas d'image trouvée localement");
+            }
+        } catch (err) {
+            console.error("Erreur image locale, tentative PokeAPI :", err.message);
+            try {
+                // PokeAPI needs the english name or ID. Often the guessed name in FR might fail here 
+                // but for 'mimiqui' we mapped it to 'mimikyu' in the test button.
+                let searchName = pokemonName.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                // Handle specific french names for the demo if needed, but the search term is usually fine
+                if (searchName === 'mimiqui') searchName = 'mimikyu';
+                
+                const pokeRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${searchName}`);
+                if (pokeRes.data && pokeRes.data.sprites && pokeRes.data.sprites.other['official-artwork'].front_default) {
+                    setPokemonImageUrl(pokeRes.data.sprites.other['official-artwork'].front_default);
+                } else {
+                    // Ultimate fallback
+                    setPokemonImageUrl("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/132.png");
+                }
+            } catch (pokeErr) {
+                console.error("Erreur PokeAPI :", pokeErr.message);
+                setPokemonImageUrl("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/132.png");
+            }
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -111,7 +163,7 @@ export default function WhosThatPokemon() {
             <div className="text-center mb-8">
                 <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground/80 flex items-center justify-center gap-3">
                     <img src="/img/metamorph.png" alt="Métamorph" className="w-12 h-12 object-contain" />
-                    Qui est ce Pokémon ?
+                    Quel est ce Pokémon ?
                 </h1>
                 <p className="text-muted-foreground mt-2">Pense à un Pokémon et Métamorph va essayer de le deviner !</p>
                 {questionCount > 0 && (
@@ -141,16 +193,23 @@ export default function WhosThatPokemon() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="glass-panel p-8 rounded-3xl text-center mb-8"
                     >
-                        <motion.div
-                            animate={{ rotate: [0, -5, 5, -5, 0] }}
-                            transition={{ duration: 0.5, delay: 0.3 }}
-                        >
-                            <img
-                                src="/img/metamorph.png"
-                                alt="Métamorph"
-                                className="w-32 h-32 object-contain mx-auto mb-4 drop-shadow-xl"
+                        <div className="relative w-40 h-40 mx-auto mb-4 flex items-center justify-center">
+                            {/* The 'poof' Cloud Animation overlay layer */}
+                            {isAnimating && (
+                                <div className="absolute inset-0 z-20 animate-cloud w-full h-full" />
+                            )}
+                            
+                            <motion.img
+                                src={!isAnimating && pokemonImageUrl ? pokemonImageUrl : "/img/metamorph.png"}
+                                alt={guessedPokemon}
+                                className={cn(
+                                    "w-32 h-32 object-contain drop-shadow-xl transition-opacity duration-300",
+                                    isAnimating ? "opacity-0" : "opacity-100"
+                                )}
+                                animate={!isAnimating ? { rotate: [0, -5, 5, -5, 0] } : {}}
+                                transition={{ duration: 0.5, delay: 0.1 }}
                             />
-                        </motion.div>
+                        </div>
                         <h2 className="text-3xl font-display font-bold text-primary mb-2">
                             C'est {guessedPokemon} ! 🎉
                         </h2>
@@ -192,7 +251,7 @@ export default function WhosThatPokemon() {
                         <motion.div
                             animate={{ y: [0, -5, 0] }}
                             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                            className="flex-shrink-0"
+                            className={cn("flex-shrink-0", isShaking && "animate-shake")}
                         >
                             <img
                                 src="/img/metamorph.png"
@@ -312,6 +371,38 @@ export default function WhosThatPokemon() {
                             >
                                 <RotateCcw size={14} />
                                 Recommencer avec un autre Pokémon
+                            </button>
+                        </motion.div>
+                    )}
+                    {/* 🧪 Bouton simulation - pour tester l'animation */}
+                    {!isLoading && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.5 }}
+                            whileHover={{ opacity: 1 }}
+                            className="text-center mt-2"
+                        >
+                            <button
+                                onClick={() => {
+                                    setIsAnimating(true);
+                                    setGuessCorrect(true);
+                                    setGameOver(true);
+                                    setGuessedPokemon("Mimiqui");
+                                    fetchPokemonImage("mimiqui");
+                                    setTimeout(() => setIsAnimating(false), 2000);
+                                }}
+                                className="text-xs w-full justify-center text-muted-foreground/60 hover:text-purple-400 transition-colors flex items-center gap-1 border border-dashed border-muted-foreground/20 rounded-full px-3 py-1"
+                            >
+                                🎮 Simuler une victoire
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsShaking(true);
+                                    setTimeout(() => setIsShaking(false), 500);
+                                }}
+                                className="text-xs w-full justify-center text-muted-foreground/60 hover:text-orange-400 transition-colors flex items-center gap-1 border border-dashed border-muted-foreground/20 rounded-full px-3 py-1"
+                            >
+                                🧪 Simuler un faux
                             </button>
                         </motion.div>
                     )}

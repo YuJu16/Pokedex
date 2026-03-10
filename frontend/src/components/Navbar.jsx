@@ -142,7 +142,7 @@ const Navbar = () => {
                             location.pathname === '/akinator' ? "text-white" : "text-muted-foreground group-hover:text-primary"
                         )}>
                             <img src="/img/metamorph.png" alt="" className="w-6 h-6 object-contain" />
-                            <span className="text-xs">Qui est ce Pokémon ?</span>
+                            <span className="text-xs">Quel est ce Pokémon ?</span>
                         </div>
                     </Link>
                 </div>

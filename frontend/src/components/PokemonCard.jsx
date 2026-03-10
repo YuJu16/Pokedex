@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { Plus, Star } from 'lucide-react';
 import { useState } from 'react';
-import { useTeams } from '../hooks/useTeams';
-import { useFavorites } from '../hooks/useFavorites';
 import { useAuth } from '../context/AuthContext';
 
 // Mapping type FR → couleur (les types dans le nouveau backend sont en français)
@@ -29,15 +27,15 @@ const typeColors = {
     'Fée': 'bg-pink-200 text-pink-800',
 };
 
-const PokemonCard = ({ pokemon, index }) => {
+// Props: teams, addPokemonToTeam, isFavorite, addFavorite, removeFavorite (passed from parent to avoid 898x hook calls)
+const PokemonCard = ({ pokemon, index, teams = [], addPokemonToTeam, isFavorite, addFavorite, removeFavorite }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { teams, addPokemonToTeam } = useTeams();
-    const { addFavorite, removeFavorite, isFavorite } = useFavorites();
     const [showTeamSelect, setShowTeamSelect] = useState(false);
 
     const handleToggleFavorite = (e) => {
         e.stopPropagation();
+        if (!isFavorite || !addFavorite || !removeFavorite) return;
         if (isFavorite(pokemon.id)) {
             removeFavorite(pokemon.id);
         } else {
@@ -46,12 +44,15 @@ const PokemonCard = ({ pokemon, index }) => {
     };
 
     const handleCardClick = () => {
+        sessionStorage.setItem('pokedex-scroll', window.scrollY);
         navigate(`/pokemon/${pokemon.id}`);
     };
 
     const handleAddToTeam = async (e, teamId) => {
         e.stopPropagation();
-        await addPokemonToTeam(teamId, pokemon.id);
+        if (addPokemonToTeam) {
+            await addPokemonToTeam(teamId, pokemon.id);
+        }
         setShowTeamSelect(false);
     };
 

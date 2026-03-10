@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, X, Layers } from 'lucide-react';
+import { Search, X, Layers, Flame } from 'lucide-react';
 import { usePokemon } from '../hooks/usePokemon';
+import { useTeams } from '../hooks/useTeams';
+import { useFavorites } from '../hooks/useFavorites';
+import { useAuth } from '../context/AuthContext';
 import PokemonCard from '../components/PokemonCard';
 import Loader from '../components/Loader';
+import CuteSelect from '../components/CuteSelect';
 
 // Types en français (comme dans le nouveau backend) 
 const types = [
@@ -17,13 +21,31 @@ const generations = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export default function Pokedex() {
     const { pokemon, loading, error } = usePokemon();
+    const { user } = useAuth();
+    // Call hooks once here, pass down to cards (avoids 898 API calls if called per card)
+    const { teams, addPokemonToTeam } = useTeams();
+    const { addFavorite, removeFavorite, isFavorite } = useFavorites();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedType, setSelectedType] = useState(null);
     const [selectedGen, setSelectedGen] = useState(null);
 
+    // Restore scroll position when returning from a Pokémon details page
+    useEffect(() => {
+        if (!loading) {
+            const savedScroll = sessionStorage.getItem('pokedex-scroll');
+            if (savedScroll) {
+                window.scrollTo({ top: parseInt(savedScroll), behavior: 'instant' });
+                sessionStorage.removeItem('pokedex-scroll');
+            }
+        }
+    }, [loading]);
+
     const filteredPokemon = pokemon.filter(p => {
         // Cherche dans le nom (maintenant un string direct)
         const matchesName = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+        // Cherche aussi par numéro Pokédex
+        const pokedexNum = String(p.pokedexId || p.id);
+        const matchesNumber = pokedexNum.includes(searchTerm.trim());
         // Filtre par type (en français, format apiTypes)
         const matchesType = selectedType
             ? p.apiTypes && p.apiTypes.some(t => t.name === selectedType)
@@ -32,7 +54,7 @@ export default function Pokedex() {
         const matchesGen = selectedGen
             ? p.apiGeneration === selectedGen
             : true;
-        return matchesName && matchesType && matchesGen;
+        return (matchesName || matchesNumber) && matchesType && matchesGen;
     });
 
     if (error) return <div className="text-center text-red-500">Erreur lors du chargement des Pokémon 😢</div>;
@@ -60,34 +82,22 @@ export default function Pokedex() {
                     </div>
 
                     {/* Filtre par type */}
-                    <div className="relative">
-                        <select
-                            className="appearance-none glass-input py-3 pl-6 pr-10 cursor-pointer hover:border-primary/50 transition-colors text-foreground"
-                            value={selectedType || ''}
-                            onChange={(e) => setSelectedType(e.target.value || null)}
-                        >
-                            <option value="" className="bg-white text-gray-500">Tous les types</option>
-                            {types.map(type => (
-                                <option key={type} value={type} className="bg-white text-foreground">{type}</option>
-                            ))}
-                        </select>
-                        <Filter className="absolute right-3 top-3.5 text-primary/50 w-4 h-4 pointer-events-none" />
-                    </div>
+                    <CuteSelect
+                        value={selectedType || ''}
+                        onChange={(val) => setSelectedType(val || null)}
+                        placeholder="Tous les types"
+                        icon={<Flame size={14} />}
+                        options={types.map(type => ({ value: type, label: type }))}
+                    />
 
                     {/* Filtre par génération */}
-                    <div className="relative">
-                        <select
-                            className="appearance-none glass-input py-3 pl-6 pr-10 cursor-pointer hover:border-primary/50 transition-colors text-foreground"
-                            value={selectedGen || ''}
-                            onChange={(e) => setSelectedGen(e.target.value ? parseInt(e.target.value) : null)}
-                        >
-                            <option value="" className="bg-white text-gray-500">Toutes les générations</option>
-                            {generations.map(gen => (
-                                <option key={gen} value={gen} className="bg-white text-foreground">Génération {gen}</option>
-                            ))}
-                        </select>
-                        <Layers className="absolute right-3 top-3.5 text-primary/50 w-4 h-4 pointer-events-none" />
-                    </div>
+                    <CuteSelect
+                        value={selectedGen ? String(selectedGen) : ''}
+                        onChange={(val) => setSelectedGen(val ? parseInt(val) : null)}
+                        placeholder="Toutes les générations"
+                        icon={<Layers size={14} />}
+                        options={generations.map(gen => ({ value: String(gen), label: `Génération ${gen}` }))}
+                    />
                 </div>
             </div>
 
@@ -137,7 +147,16 @@ export default function Pokedex() {
                 >
                     <AnimatePresence>
                         {filteredPokemon.map((p, index) => (
-                            <PokemonCard key={p.id} pokemon={p} index={index} />
+                            <PokemonCard
+                                key={p.id}
+                                pokemon={p}
+                                index={index}
+                                teams={teams}
+                                addPokemonToTeam={addPokemonToTeam}
+                                isFavorite={isFavorite}
+                                addFavorite={addFavorite}
+                                removeFavorite={removeFavorite}
+                            />
                         ))}
                     </AnimatePresence>
                 </motion.div>

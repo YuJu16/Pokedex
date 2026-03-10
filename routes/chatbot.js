@@ -1,11 +1,10 @@
 import express from 'express';
-import axios from 'axios';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = express.Router();
 
-// Configuration LM Studio (API compatible OpenAI)
-const LM_STUDIO_URL = 'http://127.0.0.1:1234/v1/chat/completions';
-const LM_STUDIO_MODEL = 'google/gemma-3-4b:2';
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_MIMIQUI);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // Le prompt système détaillé pour Mimiqui
 const SYSTEM_PROMPT = `Tu es Mimiqui (Mimikyu en anglais), le petit Pokémon fantôme/fée de type Spectre/Fée.
@@ -68,38 +67,45 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Le champ "messages" est requis et doit être un tableau.' });
         }
 
-        // Convertir les messages du frontend au format OpenAI
-        const openaiMessages = [
-            { role: 'system', content: SYSTEM_PROMPT },
-            ...messages.map(msg => ({
-                role: msg.sender === 'user' ? 'user' : 'assistant',
-                content: msg.text
-            }))
-        ];
+        // Format messages for Gemini history
+        // Gemini expects history in the format: { role: 'user' | 'model', parts: [{ text: '...' }] }
+        // The last message should be passed to sendMessage
+        
+        const lastMessage = messages[messages.length - 1].text;
+        const historyMessages = messages.slice(0, -1);
 
-        // Appel à LM Studio (API compatible OpenAI)
-        const response = await axios.post(LM_STUDIO_URL, {
-            model: LM_STUDIO_MODEL,
-            messages: openaiMessages,
-            temperature: 0.7,
-            max_tokens: 500
-        }, {
-            timeout: 60000 // 60 secondes max (les modèles locaux peuvent être lents)
+        const formattedHistory = historyMessages.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+        }));
+
+        // Initialiser la session de chat avec le prompt système
+        const chatSession = model.startChat({
+            history: [
+                {
+                    role: 'user',
+                    parts: [{ text: "Voici tes instructions système: " + SYSTEM_PROMPT }]
+                },
+                {
+                    role: 'model',
+                    parts: [{ text: "J'ai bien compris ! Je suis Mimiqui et je vais suivre ces instructions. Kss kss~ 👻💜" }]
+                },
+                ...formattedHistory
+            ],
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 500,
+            }
         });
 
-        const botReply = response.data.choices[0].message.content;
+        // Envoyer le dernier message
+        const result = await chatSession.sendMessage(lastMessage);
+        const botReply = result.response.text();
 
         res.json({ reply: botReply });
 
     } catch (error) {
-        console.error('Erreur chatbot LM Studio:', error.message);
-
-        if (error.code === 'ECONNREFUSED') {
-            return res.status(503).json({
-                error: 'LM Studio n\'est pas lancé ! Démarre LM Studio et charge un modèle. 🖥️',
-                details: error.message
-            });
-        }
+        console.error('Erreur chatbot Gemini:', error.message);
 
         res.status(500).json({
             error: 'Mimiqui est un peu fatigué... Réessaie plus tard ! 👻💤',
