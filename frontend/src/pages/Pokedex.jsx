@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Layers, Flame } from 'lucide-react';
+import { Search, X, Layers, Flame, RefreshCw } from 'lucide-react';
 import { usePokemon } from '../hooks/usePokemon';
 import { useTeams } from '../hooks/useTeams';
 import { useFavorites } from '../hooks/useFavorites';
@@ -57,7 +57,37 @@ export default function Pokedex() {
         return (matchesName || matchesNumber) && matchesType && matchesGen;
     });
 
-    if (error) return <div className="text-center text-red-500">Erreur lors du chargement des Pokémon 😢</div>;
+    if (error) return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center min-h-[60vh] text-center"
+        >
+            <div className="glass-panel p-12 rounded-3xl max-w-md">
+                <div className="relative w-36 h-36 mx-auto mb-6">
+                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                    <img
+                        src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/19.png"
+                        alt="Rattata"
+                        className="w-full h-full object-contain relative z-10 drop-shadow-xl animate-float"
+                    />
+                </div>
+                <h2 className="text-2xl font-display font-bold text-foreground/80 mb-2">
+                    Oups ! Un problème... 😢
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                    Rattata n'a pas pu charger le Pokédex. Le serveur est peut-être éteint !
+                </p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="glass-button-primary px-6 py-3 flex items-center gap-2 mx-auto group"
+                >
+                    <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+                    <span>Réessayer</span>
+                </button>
+            </div>
+        </motion.div>
+    );
 
     return (
         <div className="space-y-8">
@@ -163,9 +193,34 @@ export default function Pokedex() {
             )}
 
             {!loading && filteredPokemon.length === 0 && (
-                <div className="text-center py-20 text-muted-foreground bg-white/30 rounded-3xl border border-white/50 border-dashed">
-                    <p className="text-xl font-display">Aucun Pokémon trouvé... 😢</p>
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex flex-col items-center justify-center py-16 text-center"
+                >
+                    <div className="glass-panel p-10 rounded-3xl max-w-sm">
+                        <div className="relative w-28 h-28 mx-auto mb-5">
+                            <div className="absolute inset-0 bg-secondary/20 rounded-full blur-xl animate-pulse" />
+                            <img
+                                src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/19.png"
+                                alt="Rattata"
+                                className="w-full h-full object-contain relative z-10 drop-shadow-xl animate-float"
+                            />
+                        </div>
+                        <h3 className="text-xl font-display font-bold text-foreground/70 mb-2">
+                            Aucun Pokémon trouvé ! 🔍
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                            Même Rattata ne correspond pas à ta recherche...<br/>Essaie un autre nom ou type !
+                        </p>
+                        <button
+                            onClick={() => { setSearchTerm(''); setSelectedType(null); setSelectedGen(null); }}
+                            className="mt-5 glass-button px-5 py-2 text-sm hover:bg-primary/10"
+                        >
+                            ✨ Tout effacer
+                        </button>
+                    </div>
+                </motion.div>
             )}
         </div>
     );

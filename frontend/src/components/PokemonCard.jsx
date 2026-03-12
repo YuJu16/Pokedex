@@ -84,12 +84,12 @@ const PokemonCard = ({ pokemon, index, teams = [], addPokemonToTeam, isFavorite,
                             onClick={handleToggleFavorite}
                             className={cn(
                                 "p-2 rounded-full transition-all shadow-sm border",
-                                isFavorite(pokemon.id)
+                                isFavorite?.(pokemon.id)
                                     ? "bg-yellow-400 text-yellow-900 border-yellow-500 hover:bg-yellow-500 shadow-yellow-300/50"
                                     : "bg-white text-yellow-400 border-yellow-300/50 hover:bg-yellow-50 hover:border-yellow-400"
                             )}
                         >
-                            <Star size={16} className={isFavorite(pokemon.id) ? "fill-yellow-900" : ""} />
+                            <Star size={16} className={isFavorite?.(pokemon.id) ? "fill-yellow-900" : ""} />
                         </button>
 
                         {/* Team Select Button */}

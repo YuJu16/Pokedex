@@ -11,7 +11,7 @@ export const usePokemon = () => {
             try {
                 // Récupère les Pokémon depuis le backend local (limite haute pour tout récupérer)
                 const response = await axios.get('http://localhost:3000/api/pokemons?limit=1500');
-                setPokemon(response.data.data);
+                setPokemon(response.data.data || response.data || []);
                 setLoading(false);
             } catch (err) {
                 console.error("Erreur lors du chargement des Pokémon:", err);
