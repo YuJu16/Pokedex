@@ -216,19 +216,7 @@ export default function WhosThatPokemon() {
                         <p className="text-muted-foreground mb-2">
                             Métamorph a deviné en <strong>{questionCount}</strong> questions !
                         </p>
-                        <div className="flex flex-wrap gap-2 justify-center mt-2 mb-6">
-                            {Array.from({ length: Math.min(questionCount, 10) }).map((_, i) => (
-                                <motion.span
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="text-2xl"
-                                >
-                                    {['✨', '🌟', '💫', '⭐', '🎯'][i % 5]}
-                                </motion.span>
-                            ))}
-                        </div>
+                        <div className="mb-6"></div>
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -374,38 +362,7 @@ export default function WhosThatPokemon() {
                             </button>
                         </motion.div>
                     )}
-                    {/* 🧪 Bouton simulation - pour tester l'animation */}
-                    {!isLoading && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.5 }}
-                            whileHover={{ opacity: 1 }}
-                            className="text-center mt-2"
-                        >
-                            <button
-                                onClick={() => {
-                                    setIsAnimating(true);
-                                    setGuessCorrect(true);
-                                    setGameOver(true);
-                                    setGuessedPokemon("Mimiqui");
-                                    fetchPokemonImage("mimiqui");
-                                    setTimeout(() => setIsAnimating(false), 2000);
-                                }}
-                                className="text-xs w-full justify-center text-muted-foreground/60 hover:text-purple-400 transition-colors flex items-center gap-1 border border-dashed border-muted-foreground/20 rounded-full px-3 py-1"
-                            >
-                                🎮 Simuler une victoire
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setIsShaking(true);
-                                    setTimeout(() => setIsShaking(false), 500);
-                                }}
-                                className="text-xs w-full justify-center text-muted-foreground/60 hover:text-orange-400 transition-colors flex items-center gap-1 border border-dashed border-muted-foreground/20 rounded-full px-3 py-1"
-                            >
-                                🧪 Simuler un faux
-                            </button>
-                        </motion.div>
-                    )}
+
                 </div>
             )}
         </motion.div>
