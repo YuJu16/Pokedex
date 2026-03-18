@@ -21,7 +21,7 @@ router.post('/', auth, async (req, res) => {
 
         // Vérifier que tous les Pokémon existent
         if (pokemons && pokemons.length > 0) {
-            const existingPokemon = await Pokemon.find({ id: { $in: pokemons } });
+            const existingPokemon = await Pokemon.find({ _id: { $in: pokemons } });
             if (existingPokemon.length !== pokemons.length) {
                 return res.status(400).json({ error: 'Un ou plusieurs Pokémon n\'existent pas' });
             }
@@ -68,7 +68,8 @@ router.get('/', auth, async (req, res) => {
 // GET /api/teams/:id - Détails d'une équipe avec les Pokémon complets
 router.get('/:id', auth, async (req, res) => {
     try {
-        const team = await Team.findById(req.params.id);
+        // Utilisation de .populate() comme demandé dans le TP pour récupérer les objets complets
+        const team = await Team.findById(req.params.id).populate('pokemons');
 
         if (!team) {
             return res.status(404).json({ error: 'Équipe non trouvée' });
@@ -79,15 +80,7 @@ router.get('/:id', auth, async (req, res) => {
             return res.status(403).json({ error: 'Accès refusé à cette équipe' });
         }
 
-        // Récupérer les détails complets des Pokémon
-        const pokemonDetails = await Pokemon.find({
-            id: { $in: team.pokemons }
-        });
-
-        res.json({
-            ...team.toObject(),
-            pokemonDetails
-        });
+        res.json(team);
     } catch (error) {
         console.error('Error fetching team:', error);
 
@@ -122,7 +115,7 @@ router.put('/:id', auth, async (req, res) => {
 
         // Vérifier que tous les Pokémon existent
         if (pokemons && pokemons.length > 0) {
-            const existingPokemon = await Pokemon.find({ id: { $in: pokemons } });
+            const existingPokemon = await Pokemon.find({ _id: { $in: pokemons } });
             if (existingPokemon.length !== pokemons.length) {
                 return res.status(400).json({ error: 'Un ou plusieurs Pokémon n\'existent pas' });
             }

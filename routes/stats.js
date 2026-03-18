@@ -8,15 +8,15 @@ router.get('/', async (req, res) => {
     try {
         // 1. Nombre de Pokémon par type + moyenne HP par type
         const pokemonsByType = await Pokemon.aggregate([
-            // Étape 1 : Décomposer le tableau des types (un Pokémon peut avoir 2 types)
-            { $unwind: '$type' },
+            // Étape 1 : Décomposer le tableau des types
+            { $unwind: '$apiTypes' },
 
             // Étape 2 : Grouper par type et calculer les statistiques
             {
                 $group: {
-                    _id: '$type',
+                    _id: '$apiTypes.name',
                     count: { $sum: 1 },
-                    avgHP: { $avg: '$base.HP' }
+                    avgHP: { $avg: '$stats.HP' }
                 }
             },
 
@@ -36,28 +36,28 @@ router.get('/', async (req, res) => {
 
         // 2. Pokémon avec le plus d'attaque
         const strongestAttack = await Pokemon.aggregate([
-            { $sort: { 'base.Attack': -1 } },
+            { $sort: { 'stats.attack': -1 } },
             { $limit: 1 },
             {
                 $project: {
                     id: 1,
                     name: 1,
-                    type: 1,
-                    attack: '$base.Attack'
+                    apiTypes: 1,
+                    attack: '$stats.attack'
                 }
             }
         ]);
 
         // 3. Pokémon avec le plus de HP
         const strongestHP = await Pokemon.aggregate([
-            { $sort: { 'base.HP': -1 } },
+            { $sort: { 'stats.HP': -1 } },
             { $limit: 1 },
             {
                 $project: {
                     id: 1,
                     name: 1,
-                    type: 1,
-                    hp: '$base.HP'
+                    apiTypes: 1,
+                    hp: '$stats.HP'
                 }
             }
         ]);
@@ -68,11 +68,11 @@ router.get('/', async (req, res) => {
                 $group: {
                     _id: null,
                     totalPokemon: { $sum: 1 },
-                    avgHP: { $avg: '$base.HP' },
-                    avgAttack: { $avg: '$base.Attack' },
-                    avgDefense: { $avg: '$base.Defense' },
-                    maxHP: { $max: '$base.HP' },
-                    maxAttack: { $max: '$base.Attack' }
+                    avgHP: { $avg: '$stats.HP' },
+                    avgAttack: { $avg: '$stats.attack' },
+                    avgDefense: { $avg: '$stats.defense' },
+                    maxHP: { $max: '$stats.HP' },
+                    maxAttack: { $max: '$stats.attack' }
                 }
             },
             {

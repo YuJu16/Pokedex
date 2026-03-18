@@ -1,8 +1,21 @@
 import mongoose from "mongoose";
 
+// Liste des types autorisés selon le sujet
+const allowedTypes = [
+    'Normal', 'Feu', 'Eau', 'Électrik', 'Plante', 'Glace', 'Combat', 'Poison', 
+    'Sol', 'Vol', 'Psy', 'Insecte', 'Roche', 'Spectre', 'Dragon', 'Ténèbres', 'Acier', 'Fée'
+];
+
 // Schéma flexible pour les types (objets avec name et image)
 const apiTypeSchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    name: { 
+        type: String, 
+        required: [true, 'Le type est requis'],
+        enum: {
+            values: allowedTypes,
+            message: '{VALUE} n\'est pas un type de Pokémon valide'
+        }
+    },
     image: { type: String }
 }, { _id: false });
 
@@ -19,11 +32,23 @@ const evolutionSchema = new mongoose.Schema({
     pokedexId: { type: Number }
 }, { _id: false });
 
+// Fonction de validation pour les stats (1 à 255)
+const statValidation = {
+    type: Number,
+    required: true,
+    min: [1, 'La statistique doit être d\'au moins 1'],
+    max: [255, 'La statistique ne peut pas dépasser 255']
+};
+
 const pokemonSchema = new mongoose.Schema({
     id: {
         type: Number,
         required: [true, 'L\'ID du Pokémon est requis'],
         unique: true,
+        validate: {
+            validator: Number.isInteger,
+            message: 'L\'ID doit être un entier'
+        },
         min: [1, 'L\'ID doit être un nombre positif (minimum 1)']
     },
     pokedexId: {
@@ -45,12 +70,12 @@ const pokemonSchema = new mongoose.Schema({
         type: String
     },
     stats: {
-        HP: { type: Number, default: 0 },
-        attack: { type: Number, default: 0 },
-        defense: { type: Number, default: 0 },
-        special_attack: { type: Number, default: 0 },
-        special_defense: { type: Number, default: 0 },
-        speed: { type: Number, default: 0 }
+        HP: statValidation,
+        attack: statValidation,
+        defense: statValidation,
+        special_attack: statValidation,
+        special_defense: statValidation,
+        speed: statValidation
     },
     apiTypes: [apiTypeSchema],
     apiGeneration: {

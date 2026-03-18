@@ -15,7 +15,10 @@ const teamSchema = new mongoose.Schema({
         maxlength: [50, 'Le nom de l\'équipe ne peut pas dépasser 50 caractères']
     },
     pokemons: {
-        type: [Number], // Tableau d'IDs de Pokémon
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'pokemon'
+        }],
         validate: {
             validator: function (pokemons) {
                 return pokemons.length <= 6;
